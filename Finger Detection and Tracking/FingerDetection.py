@@ -1,3 +1,4 @@
+from re import X
 import cv2
 import numpy as np
 from numpy.core.numeric import indices
@@ -5,6 +6,7 @@ from numpy.core.numeric import indices
 
 
 hand_hist = None
+far_point = None
 traverse_point = []
 total_rectangle = 9
 hand_rect_one_x = None
@@ -104,6 +106,7 @@ def farthest_point(defects, contour, centroid):
     if defects is not None and centroid is not None:
         s = defects[:, 0][:, 0]
         cx, cy = centroid
+        global x 
 
         x = np.array(contour[s][:, 0][:, 0], dtype=np.float)
         y = np.array(contour[s][:, 0][:, 1], dtype=np.float)
@@ -111,8 +114,10 @@ def farthest_point(defects, contour, centroid):
         xp = cv2.pow(cv2.subtract(x, cx), 2)
         yp = cv2.pow(cv2.subtract(y, cy), 2)
         dist = cv2.sqrt(cv2.add(xp, yp))
+        
 
         dist_max_i = np.argmax(dist)
+        
 
         if dist_max_i < len(s):
             farthest_defect = s[dist_max_i]
@@ -136,15 +141,19 @@ def manage_image_opr(frame, hand_hist):
 
     contour_list = contours(hist_mask_image)
     max_cont = max(contour_list, key=cv2.contourArea)
+    
 
     cnt_centroid = centroid(max_cont)
     cv2.circle(frame, cnt_centroid, 5, [255, 0, 255], -1)
 
     if max_cont is not None:
+        global far_point
         hull = cv2.convexHull(max_cont, returnPoints=False)
         defects = cv2.convexityDefects(max_cont, hull)
         far_point = farthest_point(defects, max_cont, cnt_centroid)
-        print("Centroid : " + str(cnt_centroid) + ", farthest Point : " + str(far_point))
+        print("Centroid : " + str(cnt_centroid) + " , farthest Point : " + str(far_point))
+
+        
         cv2.circle(frame, far_point, 5, [0, 0, 255], -1)
         if len(traverse_point) < 20:
             traverse_point.append(far_point)
@@ -155,21 +164,28 @@ def manage_image_opr(frame, hand_hist):
         draw_circles(frame, traverse_point)
 
 
+
+
 def main():
-    global hand_hist
     is_hand_hist_created = False
     capture = cv2.VideoCapture(0)
+    img = np.zeros((512,512,3), np.uint8)
+    cv2.namedWindow('Canvas')
+    
 
     while capture.isOpened():
         pressed_key = cv2.waitKey(1)
         _,frame = capture.read()
         frame = cv2.flip(frame, 1)
+        cv2.imshow('Canvas',rescale_frame(img))
+        print(str(far_point))
+        cv2.circle(img, far_point, 5, [255, 0, 255], -1)
        
-        
 
         if pressed_key & 0xFF == ord('z'):
             is_hand_hist_created = True
             hand_hist = hand_histogram(frame)
+            
 
         if is_hand_hist_created:
             manage_image_opr(frame, hand_hist)
