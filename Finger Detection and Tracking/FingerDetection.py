@@ -105,19 +105,25 @@ def centroid(max_contour):
 def farthest_point(defects, contour, centroid):
     if defects is not None and centroid is not None:
         s = defects[:, 0][:, 0]
+        t = defects[:, 0][:, 1]
         cx, cy = centroid
-        global x 
 
         x = np.array(contour[s][:, 0][:, 0], dtype=np.float)
         y = np.array(contour[s][:, 0][:, 1], dtype=np.float)
 
+        test = (contour[s][:, 0][:, 1])
+        test1 = cv2.pow(cv2.subtract(test, cy), 2)
+
         xp = cv2.pow(cv2.subtract(x, cx), 2)
         yp = cv2.pow(cv2.subtract(y, cy), 2)
+
+        
+        
         dist = cv2.sqrt(cv2.add(xp, yp))
         
 
         dist_max_i = np.argmax(dist)
-        
+
 
         if dist_max_i < len(s):
             farthest_defect = s[dist_max_i]
@@ -178,10 +184,9 @@ def main():
         _,frame = capture.read()
         frame = cv2.flip(frame, 1)
         cv2.imshow('Canvas',rescale_frame(img))
-        print(str(far_point))
         cv2.circle(img, far_point, 5, [255, 0, 255], -1)
        
-
+        # Z
         if pressed_key & 0xFF == ord('z'):
             is_hand_hist_created = True
             hand_hist = hand_histogram(frame)
